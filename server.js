@@ -1,3 +1,14 @@
+require('dotenv').config();
+const express = require('express');
+const fetch = require('node-fetch');
+
+const app = express(); // 🔥 這行就是你缺的
+app.use(express.json());
+app.use(express.static('public'));
+
+const PORT = process.env.PORT || 3000;
+
+// API
 app.post('/analyze', async (req, res) => {
   try {
     const { symptom } = req.body;
@@ -25,7 +36,6 @@ app.post('/analyze', async (req, res) => {
 
     const data = await response.json();
 
-    // 🔥 印出錯誤（關鍵）
     if (data.error) {
       console.error("OpenAI Error:", data.error);
       return res.status(500).json({ result: "AI服務暫時不可用" });
@@ -39,4 +49,9 @@ app.post('/analyze', async (req, res) => {
     console.error(err);
     res.status(500).json({ result: "伺服器錯誤" });
   }
+});
+
+// 啟動 server
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
