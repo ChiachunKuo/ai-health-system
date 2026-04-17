@@ -2,56 +2,74 @@ require('dotenv').config();
 const express = require('express');
 const fetch = require('node-fetch');
 
-const app = express(); // 🔥 這行就是你缺的
+const app = express();
 app.use(express.json());
 app.use(express.static('public'));
 
 const PORT = process.env.PORT || 3000;
 
-// API
-app.post('/analyze', async (req, res) => {
-  try {
-    const { symptom } = req.body;
+// fallback AI（保底）
+function localAI(symptom) {
+  let result = "建議觀察症狀";
+  let risk = 30;
+  let department = "一般內科";
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'gpt-4.1-mini',
-        messages: [
-          {
-            role: 'system',
-            content: '你是醫療輔助AI，只能提供建議'
-          },
-          {
-            role: 'user',
-            content: symptom
-          }
-        ]
-      })
-    });
+  if (symptom.includes("發燒")) {
+    result = "可能為感染，建議休息與補水";
+    risk = 60;
+  }
+
+  if (symptom.includes("咳")) {
+    result = "可能為呼吸道問題";
+    department = "胸腔科";
+    risk = 50;
+  }
+
+  if (symptom.includes("胸痛")) {
+    result = "⚠️ 疑似心血管問題，請立即就醫";
+    department = "心臟內科";
+    risk = 90;
+  }
+
+  return { result, risk, department };
+}
+
+app.post('/analyze', async (req, res) => {
+  const { symptom } = req.body;
+
+  try {
+    const response = await fetch(
+      "https://api-inference.huggingface.co/models/google/flan-t5-base",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.HF_API_KEY}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          inputs: `請用醫師語氣分析：${symptom}`
+        })
+      }
+    );
 
     const data = await response.json();
 
-    if (data.error) {
-      console.error("OpenAI Error:", data.error);
-      return res.status(500).json({ result: "AI服務暫時不可用" });
+    if (Array.isArray(data) && data[0]?.generated_text) {
+      return res.json({
+        result: data[0].generated_text,
+        risk: 50,
+        department: "建議門診"
+      });
     }
 
-    res.json({
-      result: data.choices[0].message.content
-    });
+    throw new Error("HF失敗");
 
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ result: "伺服器錯誤" });
+    const fallback = localAI(symptom);
+    res.json(fallback);
   }
 });
 
-// 啟動 server
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on ${PORT}`);
 });
