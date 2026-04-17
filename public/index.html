@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>AI健康系統</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- 醫療聲明 -->
+<div id="modal">
+  <div class="box">
+    <h2>⚠️ 醫療聲明</h2>
+    <p>本系統僅供參考，請依醫師診斷為準</p>
+    <button onclick="accept()">同意</button>
+  </div>
+</div>
+
+<header>🩺 AI健康評估</header>
+
+<div id="chat"></div>
+
+<div class="input-area">
+  <input id="input" placeholder="輸入症狀...">
+  <button onclick="send()">送出</button>
+</div>
+
+<script src="script.js"></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=你的GOOGLE_API_KEY"></script>
+</body>
+</html>
