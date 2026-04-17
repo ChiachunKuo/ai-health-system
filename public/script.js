@@ -64,31 +64,14 @@ function updateRisk(risk) {
 }
 
 // 📍 地圖（修正版🔥）
-function loadMap(keyword) {
+function openMap(keyword) {
   navigator.geolocation.getCurrentPosition(pos => {
     const lat = pos.coords.latitude;
     const lng = pos.coords.longitude;
 
-    const map = new google.maps.Map(document.getElementById("map"), {
-      center: { lat, lng },
-      zoom: 14,
-    });
+    const url = `https://www.google.com/maps/search/${keyword}+診所/@${lat},${lng},15z`;
 
-    const service = new google.maps.places.PlacesService(map);
-
-    service.textSearch({
-      location: { lat, lng },
-      radius: 2000,
-      query: keyword + " 診所"
-    }, (results, status) => {
-      if (status === google.maps.places.PlacesServiceStatus.OK) {
-        results.forEach(place => {
-          new google.maps.Marker({
-            map,
-            position: place.geometry.location
-          });
-        });
-      }
-    });
+    // 📱 手機會開App / 電腦開網頁
+    window.open(url, "_blank");
   });
 }
