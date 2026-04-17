@@ -1,24 +1,6 @@
-require('dotenv').config();
-const express = require('express');
-const fetch = require('node-fetch');
-
-const app = express();
-app.use(express.json());
-app.use(express.static('public'));
-
-const PORT = process.env.PORT || 3000;
-
 app.post('/analyze', async (req, res) => {
   try {
     const { symptom } = req.body;
-
-    // 👉 簡單科別判斷
-    let department = "一般內科";
-    if (symptom.includes("心") || symptom.includes("胸")) {
-      department = "心臟內科";
-    } else if (symptom.includes("咳") || symptom.includes("呼吸")) {
-      department = "胸腔科";
-    }
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -43,20 +25,18 @@ app.post('/analyze', async (req, res) => {
 
     const data = await response.json();
 
-    if (!data.choices) {
-      return res.status(500).json({ result: "AI 回應失敗" });
+    // 🔥 印出錯誤（關鍵）
+    if (data.error) {
+      console.error("OpenAI Error:", data.error);
+      return res.status(500).json({ result: "AI服務暫時不可用" });
     }
 
     res.json({
-      result: data.choices[0].message.content,
-      department
+      result: data.choices[0].message.content
     });
 
   } catch (err) {
+    console.error(err);
     res.status(500).json({ result: "伺服器錯誤" });
   }
-});
-
-app.listen(PORT, () => {
-  console.log(`Server running on ${PORT}`);
 });
